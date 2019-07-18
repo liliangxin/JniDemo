@@ -1,0 +1,97 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 28
+    defaultConfig {
+        applicationId "com.gago.jnidemo"
+        minSdkVersion 15
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
+            }
+        }
+        ndk {
+            // 指定输出/支持的abi架构
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
+    }
+    signingConfigs {
+
+        debug {
+            storeFile file("../gago_picc.jks")
+            storePassword "gagobigdata"
+            keyAlias "gago"
+            keyPassword "gago#2018"
+        }
+        release {    //自己的签名文件
+            storeFile file("../gago_picc.jks")
+            storePassword "gagobigdata"
+            keyAlias "gago"
+            keyPassword "gago#2018"
+        }
+    }
+    buildTypes {
+        debug {
+            multiDexEnabled true
+            debuggable true
+            /* packaging related */
+            signingConfig signingConfigs.debug
+
+            /* post-packaging releated */
+            applicationVariants.all { variant -> // change apk's name and output dir.
+                variant.outputs.all { output ->
+                    if (outputFileName != null && outputFileName.endsWith('debug.apk')) {
+                        outputFileName = "jnidemo_V" + defaultConfig.versionName + "_dev.apk"
+                        String outFilePath = output.getOutputFile().getParentFile().getParentFile().path
+                        variant.packageApplication.outputDirectory = new File(outFilePath + File.separator)
+                    }
+                }
+            }
+        }
+
+
+
+        release {
+            multiDexEnabled true
+            //混淆
+            minifyEnabled false
+            //Zipalign优化
+            zipAlignEnabled true
+            // 移除无用的resource文件
+            shrinkResources false
+            //前一部分代表系统默认的android程序的混淆文件，该文件已经包含了基本的混淆声明，后一个文件是自己的定义混淆文件
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            //签名
+            signingConfig signingConfigs.release
+
+            // change apk's name and output dir.
+            applicationVariants.all { variant ->
+                variant.outputs.all { output ->
+                    if (outputFileName != null && outputFileName.endsWith('release.apk')) {
+                        outputFileName = "jnidemo_V" + defaultConfig.versionName + "_pro.apk"
+                        String outFilePath = output.getOutputFile().getParentFile().getParentFile().path
+                        variant.packageApplication.outputDirectory = new File(outFilePath + File.separator)
+                    }
+                }
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}
